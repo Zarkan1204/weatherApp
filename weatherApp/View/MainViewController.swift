@@ -11,6 +11,9 @@ import UIKit
 
 final class MainViewController: UIViewController {
     
+    let viewModel = ViewModel()
+    var cancellable: Set<AnyCancellable> = []
+    
     //MARK: - Properties
     
     private lazy var cityTextField: UISearchTextField = {
@@ -40,9 +43,10 @@ final class MainViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        cityTextField.text = viewModel.city
         setupViews()
         setupLayout()
+        binding()
     }
     
     //MARK: - Functions
@@ -69,10 +73,40 @@ final class MainViewController: UIViewController {
         }
     }
     
+    private func binding() {
+        cityTextField.textPublisher
+            .assign(to: \.city, on: viewModel)
+            .store(in: &cancellable)
+        
+        viewModel.$currentWeather
+            .sink(receiveValue: {[weak self] currentWeather in
+                self?.temperatureLabel.text = currentWeather.main?.temp != nil ? "\(Int((currentWeather.main?.temp ?? .zero))) ºC" : Constants.warning})
+            .store(in: &cancellable)
+        
+        viewModel.$currentWeather
+            .sink { [weak self] currentWeather in
+                self?.pressureLabel.text = currentWeather.main?.pressure != nil ?
+                "\(Int(Double((currentWeather.main?.pressure ?? .zero)) * Constants.indexPressure))mm" : Constants.error}
+            .store(in: &cancellable)
+        
+    }
+    
     //MARK: - @objc Functions
     
     @objc private func textFieldShouldReturn() {
         view.endEditing(true)
+    }
+}
+
+//MARK: - UISearchTextField
+
+extension UISearchTextField {
+    var textPublisher: AnyPublisher<String, Never> {
+        NotificationCenter.default
+            .publisher(for: UITextField.textDidChangeNotification, object: self)
+            .compactMap { $0.object as? UITextField }
+            .map { $0.text ?? "" }
+            .eraseToAnyPublisher()
     }
 }
 
@@ -81,4 +115,6 @@ private enum Constants {
     static let inset: CGFloat = 50
     static let city = "city"
     static let indexPressure: CGFloat = 0.75
+    static let error = "not found"
+    static let warning = "incorrect city name"
 }
