@@ -80,13 +80,13 @@ final class MainViewController: UIViewController {
         
         viewModel.$currentWeather
             .sink(receiveValue: {[weak self] currentWeather in
-                self?.temperatureLabel.text = currentWeather.main?.temp != nil ? "\(Int((currentWeather.main?.temp ?? .zero))) ºC" : Constants.warning})
+                self?.temperatureLabel.text = currentWeather.main?.temp != nil ? "\(Int((currentWeather.main?.temp ?? .zero))) ºC" : "incorrect city name"})
             .store(in: &cancellable)
         
         viewModel.$currentWeather
             .sink { [weak self] currentWeather in
                 self?.pressureLabel.text = currentWeather.main?.pressure != nil ?
-                "\(Int(Double((currentWeather.main?.pressure ?? .zero)) * Constants.indexPressure))mm" : Constants.error}
+                "\(Int(Double((currentWeather.main?.pressure ?? .zero)) * Constants.indexPressure))mm" : "not found"}
             .store(in: &cancellable)
         
     }
@@ -115,6 +115,4 @@ private enum Constants {
     static let inset: CGFloat = 50
     static let city = "city"
     static let indexPressure: CGFloat = 0.75
-    static let error = "not found"
-    static let warning = "incorrect city name"
 }
